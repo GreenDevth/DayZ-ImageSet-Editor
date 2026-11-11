@@ -874,8 +874,8 @@ impl eframe::App for ImagesetEditorApp {
         // --- 2. Left Side Panel: ImageSet Config & Sprite List ---
         egui::SidePanel::left("left_panel")
             .resizable(true)
-            .default_width(330.0)
-            .width_range(280.0..=480.0)
+            .default_width(310.0)
+            .width_range(260.0..=460.0)
             .frame(
                 egui::Frame::none()
                     .fill(egui::Color32::from_rgb(20, 24, 32))
@@ -1094,8 +1094,8 @@ impl eframe::App for ImagesetEditorApp {
         // --- 3. Right Side Panel: Inspector & Generated Code ---
         egui::SidePanel::right("right_panel")
             .resizable(true)
-            .default_width(360.0)
-            .width_range(300.0..=550.0)
+            .default_width(330.0)
+            .width_range(280.0..=520.0)
             .frame(
                 egui::Frame::none()
                     .fill(egui::Color32::from_rgb(20, 24, 32))
@@ -1842,8 +1842,9 @@ fn main() {
     }
 
     let native_options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(1440.0, 920.0)),
-        min_window_size: Some(egui::vec2(1100.0, 720.0)),
+        initial_window_size: Some(egui::vec2(1600.0, 960.0)),
+        min_window_size: Some(egui::vec2(1200.0, 720.0)),
+        maximized: true,
         icon_data,
         ..Default::default()
     };
