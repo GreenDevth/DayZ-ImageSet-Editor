@@ -1,0 +1,15 @@
+[package]
+name = "dayz_imageset_editor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.20"
+egui = "0.20"
+image = "0.25"
+serde = { version = "1.0", features = ["derive"] }
+regex = "1.10"
+rfd = "0.9"
+
+[build-dependencies]
+winres = "0.1"

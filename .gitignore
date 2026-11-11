@@ -1,0 +1,21 @@
+# Build target
+/target/
+target/
+
+# IDE & Editor caches
+.idea/
+.vscode/
+*.swp
+*.iml
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Temporary outputs
+*.log
+*.tmp
+generated.imageset
