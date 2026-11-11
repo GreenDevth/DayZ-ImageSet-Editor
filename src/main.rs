@@ -874,52 +874,57 @@ impl eframe::App for ImagesetEditorApp {
         // --- 2. Left Side Panel: ImageSet Config & Sprite List ---
         egui::SidePanel::left("left_panel")
             .resizable(true)
-            .default_width(320.0)
+            .default_width(330.0)
             .width_range(280.0..=480.0)
             .frame(
                 egui::Frame::none()
                     .fill(egui::Color32::from_rgb(20, 24, 32))
-                    .inner_margin(egui::style::Margin::same(14.0))
+                    .inner_margin(egui::style::Margin::same(16.0))
                     .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(46, 56, 70)))
             )
             .show(ctx, |ui| {
                 ui.label(
                     egui::RichText::new("1. ImageSet Properties")
                         .strong()
-                        .size(13.0)
-                        .color(egui::Color32::from_rgb(139, 148, 158))
+                        .size(14.0)
+                        .color(egui::Color32::from_rgb(240, 246, 252))
                 );
                 ui.add_space(8.0);
 
                 let mut changed = false;
 
                 // Name field
-                ui.label(egui::RichText::new("ImageSet Name:").size(12.0));
-                if ui.add(egui::TextEdit::singleline(&mut self.imageset.name).desired_width(f32::INFINITY)).changed() {
+                ui.label(egui::RichText::new("ImageSet Name:").size(12.5));
+                if ui.add(
+                    egui::TextEdit::singleline(&mut self.imageset.name)
+                        .desired_width(f32::INFINITY)
+                        .margin(egui::vec2(8.0, 6.0))
+                ).changed() {
                     changed = true;
                 }
-                ui.add_space(6.0);
+                ui.add_space(8.0);
 
                 // Texture path mpix 0
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("Texture (mpix 0) .edds:").size(12.0));
+                    ui.label(egui::RichText::new("Texture (mpix 0) .edds:").size(12.5));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(egui::RichText::new("(Ctrl+V to paste GUID)").size(10.0).color(egui::Color32::from_rgb(139, 148, 158)));
+                        ui.label(egui::RichText::new("(Ctrl+V to paste GUID)").size(11.0).color(egui::Color32::from_rgb(139, 148, 158)));
                     });
                 });
 
                 if ui.add(
                     egui::TextEdit::singleline(&mut self.imageset.texture_path_1x)
                         .desired_width(f32::INFINITY)
+                        .margin(egui::vec2(8.0, 6.0))
                         .hint_text("{GUID}Gui/imagesets/name.edds")
                 ).changed() {
                     changed = true;
                 }
-                ui.add_space(6.0);
+                ui.add_space(8.0);
 
                 // Optional mpix 1 (@2x) texture
                 ui.horizontal(|ui| {
-                    if ui.checkbox(&mut self.imageset.enable_2x, "Enable 2x Texture (mpix 1):").changed() {
+                    if ui.checkbox(&mut self.imageset.enable_2x, egui::RichText::new("Enable 2x Texture (mpix 1):").size(12.5)).changed() {
                         changed = true;
                     }
                 });
@@ -928,46 +933,61 @@ impl eframe::App for ImagesetEditorApp {
                     if ui.add(
                         egui::TextEdit::singleline(&mut self.imageset.texture_path_2x)
                             .desired_width(f32::INFINITY)
+                            .margin(egui::vec2(8.0, 6.0))
                             .hint_text("{GUID}Gui/imagesets/name@2x.edds")
                     ).changed() {
                         changed = true;
                     }
                 }
-                ui.add_space(6.0);
+                ui.add_space(8.0);
 
                 // RefSize W x H
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
-                        ui.label(egui::RichText::new("Ref Width:").size(11.0));
+                        ui.label(egui::RichText::new("Ref Width:").size(12.0));
                         let mut w_str = self.imageset.ref_size.0.to_string();
-                        if ui.add(egui::TextEdit::singleline(&mut w_str).desired_width(110.0)).changed() {
+                        if ui.add(
+                            egui::TextEdit::singleline(&mut w_str)
+                                .desired_width(120.0)
+                                .margin(egui::vec2(8.0, 6.0))
+                        ).changed() {
                             if let Ok(w) = w_str.parse::<u32>() { self.imageset.ref_size.0 = w; changed = true; }
                         }
                     });
 
+                    ui.add_space(10.0);
+
                     ui.vertical(|ui| {
-                        ui.label(egui::RichText::new("Ref Height:").size(11.0));
+                        ui.label(egui::RichText::new("Ref Height:").size(12.0));
                         let mut h_str = self.imageset.ref_size.1.to_string();
-                        if ui.add(egui::TextEdit::singleline(&mut h_str).desired_width(110.0)).changed() {
+                        if ui.add(
+                            egui::TextEdit::singleline(&mut h_str)
+                                .desired_width(120.0)
+                                .margin(egui::vec2(8.0, 6.0))
+                        ).changed() {
                             if let Ok(h) = h_str.parse::<u32>() { self.imageset.ref_size.1 = h; changed = true; }
                         }
                     });
                 });
 
-                ui.add_space(14.0);
+                ui.add_space(16.0);
                 ui.separator();
-                ui.add_space(8.0);
+                ui.add_space(10.0);
 
                 // Section 2: Sprites List Header
                 ui.horizontal(|ui| {
                     ui.label(
                         egui::RichText::new(format!("2. Sprites ({})", self.imageset.images.len()))
                             .strong()
-                            .size(13.0)
-                            .color(egui::Color32::from_rgb(139, 148, 158))
+                            .size(14.0)
+                            .color(egui::Color32::from_rgb(240, 246, 252))
                     );
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("+ Add Box").on_hover_text("เพิ่มกล่อง Sprite ใหม่ที่มุมบนซ้าย").clicked() {
+                        let add_btn = egui::Button::new(
+                            egui::RichText::new("+ Add Box").size(12.5).strong()
+                        ).fill(egui::Color32::from_rgb(45, 55, 72));
+
+                        if ui.add(add_btn).on_hover_text("เพิ่มกล่อง Sprite ใหม่ที่มุมบนซ้าย").clicked() {
                             let next_num = self.imageset.images.len() + 1;
                             self.imageset.images.push(ImageDef {
                                 id: format!("icon_{}", next_num),
@@ -983,14 +1003,17 @@ impl eframe::App for ImagesetEditorApp {
 
                         // ปุ่ม Duplicate Box ใน Header
                         let has_selection = self.selected_index.is_some();
-                        let dup_btn = egui::Button::new("📋 Duplicate");
+                        let dup_btn = egui::Button::new(
+                            egui::RichText::new("📋 Duplicate").size(12.5)
+                        ).fill(if has_selection { egui::Color32::from_rgb(37, 99, 235) } else { egui::Color32::from_rgb(30, 41, 59) });
+
                         if ui.add_enabled(has_selection, dup_btn).on_hover_text("คัดลอกกล่อง Sprite ที่เลือกอยู่ (Ctrl+D)").clicked() {
                             self.duplicate_selected_box();
                             changed = true;
                         }
                     });
                 });
-                ui.add_space(6.0);
+                ui.add_space(8.0);
 
                 // Sprites List Body
                 egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
@@ -999,7 +1022,7 @@ impl eframe::App for ImagesetEditorApp {
                         ui.vertical_centered(|ui| {
                             ui.label(
                                 egui::RichText::new("No sprite boxes yet.\nDrag on canvas to draw freely, or click '+ Add Box'")
-                                    .size(12.0)
+                                    .size(12.5)
                                     .color(egui::Color32::from_rgb(100, 115, 130))
                             );
                         });
@@ -1009,16 +1032,16 @@ impl eframe::App for ImagesetEditorApp {
                     for (idx, img) in self.imageset.images.iter().enumerate() {
                         let is_sel = self.selected_index == Some(idx);
                         let bg_color = if is_sel {
-                            egui::Color32::from_rgb(38, 48, 62)
+                            egui::Color32::from_rgb(42, 54, 70)
                         } else {
-                            egui::Color32::from_rgb(26, 32, 40)
+                            egui::Color32::from_rgb(24, 30, 38)
                         };
 
                         let mut del_clicked = false;
                         let item_frame = egui::Frame::none()
                             .fill(bg_color)
-                            .inner_margin(egui::style::Margin::symmetric(10.0, 8.0))
-                            .stroke(egui::Stroke::new(1.0_f32, if is_sel { egui::Color32::from_rgb(245, 158, 11) } else { egui::Color32::from_rgb(38, 46, 56) }));
+                            .inner_margin(egui::style::Margin::symmetric(12.0, 10.0))
+                            .stroke(egui::Stroke::new(1.0_f32, if is_sel { egui::Color32::from_rgb(245, 158, 11) } else { egui::Color32::from_rgb(40, 48, 60) }));
 
                         let frame_resp = item_frame.show(ui, |ui| {
                             ui.horizontal(|ui| {
@@ -1026,13 +1049,14 @@ impl eframe::App for ImagesetEditorApp {
                                 let subtext = format!("Pos: {}, {} | Size: {}x{}", img.pos.0, img.pos.1, img.size.0, img.size.1);
                                 
                                 ui.vertical(|ui| {
-                                    ui.label(egui::RichText::new(text).strong().size(12.0).color(if is_sel { egui::Color32::WHITE } else { egui::Color32::from_rgb(210, 225, 240) }));
-                                    ui.label(egui::RichText::new(subtext).size(10.0).color(egui::Color32::from_rgb(120, 135, 150)));
+                                    ui.label(egui::RichText::new(text).strong().size(13.0).color(if is_sel { egui::Color32::WHITE } else { egui::Color32::from_rgb(220, 230, 242) }));
+                                    ui.add_space(2.0);
+                                    ui.label(egui::RichText::new(subtext).size(11.0).color(egui::Color32::from_rgb(139, 148, 158)));
                                 });
 
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                     let del_btn = egui::Button::new(
-                                        egui::RichText::new("✕").size(12.0).color(egui::Color32::from_rgb(248, 113, 113))
+                                        egui::RichText::new("✕").size(13.0).color(egui::Color32::from_rgb(248, 113, 113))
                                     );
                                     if ui.add(del_btn).on_hover_text("Delete this sprite box").clicked() {
                                         del_clicked = true;
@@ -1048,7 +1072,7 @@ impl eframe::App for ImagesetEditorApp {
                             self.selected_index = Some(idx);
                         }
 
-                        ui.add_space(4.0);
+                        ui.add_space(6.0);
                     }
 
                     if let Some(idx) = to_delete {
@@ -1075,17 +1099,17 @@ impl eframe::App for ImagesetEditorApp {
             .frame(
                 egui::Frame::none()
                     .fill(egui::Color32::from_rgb(20, 24, 32))
-                    .inner_margin(egui::style::Margin::same(14.0))
+                    .inner_margin(egui::style::Margin::same(16.0))
                     .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(46, 56, 70)))
             )
             .show(ctx, |ui| {
                 ui.label(
                     egui::RichText::new("3. Sprite Inspector")
                         .strong()
-                        .size(13.0)
-                        .color(egui::Color32::from_rgb(139, 148, 158))
+                        .size(14.0)
+                        .color(egui::Color32::from_rgb(240, 246, 252))
                 );
-                ui.add_space(8.0);
+                ui.add_space(10.0);
 
                 let mut changed = false;
 
@@ -1093,94 +1117,129 @@ impl eframe::App for ImagesetEditorApp {
                     if idx < self.imageset.images.len() {
                         let sp = &mut self.imageset.images[idx];
 
-                        ui.label(egui::RichText::new("Sprite Name:").size(12.0));
-                        if ui.add(egui::TextEdit::singleline(&mut sp.name).desired_width(f32::INFINITY)).changed() {
+                        ui.label(egui::RichText::new("Sprite Name:").size(12.5));
+                        if ui.add(
+                            egui::TextEdit::singleline(&mut sp.name)
+                                .desired_width(f32::INFINITY)
+                                .margin(egui::vec2(8.0, 6.0))
+                        ).changed() {
                             changed = true;
                         }
-                        ui.add_space(6.0);
+                        ui.add_space(8.0);
 
                         // Coordinates in 2 columns
                         ui.horizontal(|ui| {
                             ui.vertical(|ui| {
-                                ui.label(egui::RichText::new("Pos X (Left):").size(11.0));
+                                ui.label(egui::RichText::new("Pos X (Left):").size(12.0));
                                 let mut x = sp.pos.0.to_string();
-                                if ui.add(egui::TextEdit::singleline(&mut x).desired_width(95.0)).changed() {
+                                if ui.add(
+                                    egui::TextEdit::singleline(&mut x)
+                                        .desired_width(110.0)
+                                        .margin(egui::vec2(8.0, 6.0))
+                                ).changed() {
                                     if let Ok(val) = x.parse::<i32>() { sp.pos.0 = val; changed = true; }
                                 }
                             });
 
+                            ui.add_space(10.0);
+
                             ui.vertical(|ui| {
-                                ui.label(egui::RichText::new("Pos Y (Top):").size(11.0));
+                                ui.label(egui::RichText::new("Pos Y (Top):").size(12.0));
                                 let mut y = sp.pos.1.to_string();
-                                if ui.add(egui::TextEdit::singleline(&mut y).desired_width(95.0)).changed() {
+                                if ui.add(
+                                    egui::TextEdit::singleline(&mut y)
+                                        .desired_width(110.0)
+                                        .margin(egui::vec2(8.0, 6.0))
+                                ).changed() {
                                     if let Ok(val) = y.parse::<i32>() { sp.pos.1 = val; changed = true; }
                                 }
                             });
                         });
-                        ui.add_space(6.0);
+                        ui.add_space(8.0);
 
                         ui.horizontal(|ui| {
                             ui.vertical(|ui| {
-                                ui.label(egui::RichText::new("Size W (Width):").size(11.0));
+                                ui.label(egui::RichText::new("Size W (Width):").size(12.0));
                                 let mut w = sp.size.0.to_string();
-                                if ui.add(egui::TextEdit::singleline(&mut w).desired_width(95.0)).changed() {
+                                if ui.add(
+                                    egui::TextEdit::singleline(&mut w)
+                                        .desired_width(110.0)
+                                        .margin(egui::vec2(8.0, 6.0))
+                                ).changed() {
                                     if let Ok(val) = w.parse::<u32>() { sp.size.0 = val; changed = true; }
                                 }
                             });
 
+                            ui.add_space(10.0);
+
                             ui.vertical(|ui| {
-                                ui.label(egui::RichText::new("Size H (Height):").size(11.0));
+                                ui.label(egui::RichText::new("Size H (Height):").size(12.0));
                                 let mut h = sp.size.1.to_string();
-                                if ui.add(egui::TextEdit::singleline(&mut h).desired_width(95.0)).changed() {
+                                if ui.add(
+                                    egui::TextEdit::singleline(&mut h)
+                                        .desired_width(110.0)
+                                        .margin(egui::vec2(8.0, 6.0))
+                                ).changed() {
                                     if let Ok(val) = h.parse::<u32>() { sp.size.1 = val; changed = true; }
                                 }
                             });
                         });
-                        ui.add_space(6.0);
+                        ui.add_space(8.0);
 
                         // Flags field with presets (0, ISVerticalTile, ISHorizontalTile, 3)
-                        ui.label(egui::RichText::new("Flags (Enum / Number):").size(11.0));
+                        ui.label(egui::RichText::new("Flags (Enum / Number):").size(12.0));
                         ui.horizontal(|ui| {
-                            if ui.add(egui::TextEdit::singleline(&mut sp.flags).desired_width(120.0)).changed() {
+                            if ui.add(
+                                egui::TextEdit::singleline(&mut sp.flags)
+                                    .desired_width(120.0)
+                                    .margin(egui::vec2(8.0, 5.0))
+                            ).changed() {
                                 changed = true;
                             }
 
                             // Quick preset pills
-                            if ui.small_button("0").on_hover_text("Standard 0").clicked() {
+                            ui.spacing_mut().button_padding = egui::vec2(7.0, 4.0);
+                            if ui.button("0").on_hover_text("Standard 0").clicked() {
                                 sp.flags = "0".to_string();
                                 changed = true;
                             }
-                            if ui.small_button("VTile").on_hover_text("ISVerticalTile").clicked() {
+                            if ui.button("VTile").on_hover_text("ISVerticalTile").clicked() {
                                 sp.flags = "ISVerticalTile".to_string();
                                 changed = true;
                             }
-                            if ui.small_button("HTile").on_hover_text("ISHorizontalTile").clicked() {
+                            if ui.button("HTile").on_hover_text("ISHorizontalTile").clicked() {
                                 sp.flags = "ISHorizontalTile".to_string();
                                 changed = true;
                             }
-                            if ui.small_button("3").on_hover_text("Grid Center 3").clicked() {
+                            if ui.button("3").on_hover_text("Grid Center 3").clicked() {
                                 sp.flags = "3".to_string();
                                 changed = true;
                             }
                         });
-                        ui.add_space(6.0);
+                        ui.add_space(8.0);
 
                         ui.horizontal(|ui| {
                             ui.vertical(|ui| {
-                                ui.label(egui::RichText::new("Group (Optional):").size(11.0));
+                                ui.label(egui::RichText::new("Group (Optional):").size(12.0));
                                 let mut grp = sp.group.clone().unwrap_or_default();
-                                if ui.add(egui::TextEdit::singleline(&mut grp).desired_width(f32::INFINITY)).changed() {
+                                if ui.add(
+                                    egui::TextEdit::singleline(&mut grp)
+                                        .desired_width(f32::INFINITY)
+                                        .margin(egui::vec2(8.0, 6.0))
+                                ).changed() {
                                     sp.group = if grp.trim().is_empty() { None } else { Some(grp) };
                                     changed = true;
                                 }
                             });
                         });
 
-                        ui.add_space(10.0);
+                        ui.add_space(14.0);
                         ui.horizontal(|ui| {
+                            ui.spacing_mut().button_padding = egui::vec2(12.0, 7.0);
+
                             // ปุ่ม Duplicate Box ใน Inspector
                             let dup_btn = egui::Button::new(
-                                egui::RichText::new("📋 Duplicate (Ctrl+D)").size(11.0)
+                                egui::RichText::new("📋 Duplicate (Ctrl+D)").size(12.5).strong()
                             ).fill(egui::Color32::from_rgb(37, 99, 235));
 
                             if ui.add(dup_btn).on_hover_text("ทำสำเนากล่องนี้พร้อมขนาดและค่าต่างๆ ไปยังตำแหน่งถัดไป").clicked() {
@@ -1190,8 +1249,8 @@ impl eframe::App for ImagesetEditorApp {
 
                             // ปุ่ม Delete Box ใน Inspector
                             let del_btn = egui::Button::new(
-                                egui::RichText::new("🗑 Delete Box (Del)").size(11.0)
-                            ).fill(egui::Color32::from_rgb(185, 28, 28));
+                                egui::RichText::new("🗑 Delete Box (Del)").size(12.5).strong()
+                            ).fill(egui::Color32::from_rgb(220, 38, 38));
 
                             if ui.add(del_btn).on_hover_text("ลบกล่อง Sprite นี้ (กดปุ่ม Delete หรือ Backspace)").clicked() {
                                 self.delete_selected_box();
@@ -1202,34 +1261,38 @@ impl eframe::App for ImagesetEditorApp {
                 } else {
                     egui::Frame::none()
                         .fill(egui::Color32::from_rgb(16, 20, 26))
-                        .inner_margin(egui::style::Margin::same(12.0))
+                        .inner_margin(egui::style::Margin::same(14.0))
                         .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(34, 42, 54)))
                         .show(ui, |ui| {
                             ui.label(
                                 egui::RichText::new("No sprite selected.\nClick any box on canvas to inspect/edit.")
-                                    .size(11.0)
-                                    .color(egui::Color32::from_rgb(120, 135, 150))
+                                    .size(12.0)
+                                    .color(egui::Color32::from_rgb(139, 148, 158))
                             );
                         });
                 }
 
-                ui.add_space(14.0);
+                ui.add_space(16.0);
                 ui.separator();
-                ui.add_space(8.0);
+                ui.add_space(10.0);
 
                 // Section 4: Live Code Header with Proper Padding and Clean Container
                 ui.horizontal(|ui| {
                     ui.label(
                         egui::RichText::new("4. Live .imageset Code")
                             .strong()
-                            .size(13.0)
-                            .color(egui::Color32::from_rgb(139, 148, 158))
+                            .size(14.0)
+                            .color(egui::Color32::from_rgb(240, 246, 252))
                     );
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("Copy Code").clicked() {
+                        let copy_btn = egui::Button::new(
+                            egui::RichText::new("📋 Copy Code").size(12.0)
+                        ).fill(egui::Color32::from_rgb(45, 55, 72));
+
+                        if ui.add(copy_btn).clicked() {
                             ui.output().copied_text = self.code_cache.clone();
-                            self.status_msg = "Code copied to clipboard!".to_string();
+                            self.status_msg = "Copied imageset code to clipboard!".to_string();
                         }
                     });
                 });
@@ -1268,54 +1331,66 @@ impl eframe::App for ImagesetEditorApp {
                 // Secondary Toolbar directly above canvas
                 egui::Frame::none()
                     .fill(egui::Color32::from_rgb(18, 22, 28))
-                    .inner_margin(egui::style::Margin::symmetric(14.0, 8.0))
+                    .inner_margin(egui::style::Margin::symmetric(14.0, 10.0))
                     .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(38, 46, 58)))
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing = egui::vec2(10.0, 0.0);
+                            ui.spacing_mut().button_padding = egui::vec2(10.0, 6.0);
+
                             // Tool Mode Selector (Draw/Edit vs Pan)
                             let is_draw = self.tool_mode == ToolMode::DrawEdit;
                             let is_pan = self.tool_mode == ToolMode::Pan;
 
-                            let draw_btn = egui::Button::new("Draw / Edit Mode")
-                                .fill(if is_draw { egui::Color32::from_rgb(30, 60, 90) } else { egui::Color32::from_rgb(26, 32, 40) });
+                            let draw_btn = egui::Button::new(
+                                egui::RichText::new("✏ Draw / Edit Mode").size(13.0).strong()
+                            ).fill(if is_draw { egui::Color32::from_rgb(37, 99, 235) } else { egui::Color32::from_rgb(26, 32, 40) });
                             if ui.add(draw_btn).clicked() {
                                 self.tool_mode = ToolMode::DrawEdit;
                             }
 
-                            let pan_btn = egui::Button::new("Pan Mode")
-                                .fill(if is_pan { egui::Color32::from_rgb(30, 60, 90) } else { egui::Color32::from_rgb(26, 32, 40) });
+                            let pan_btn = egui::Button::new(
+                                egui::RichText::new("✋ Pan Mode").size(13.0).strong()
+                            ).fill(if is_pan { egui::Color32::from_rgb(37, 99, 235) } else { egui::Color32::from_rgb(26, 32, 40) });
                             if ui.add(pan_btn).clicked() {
                                 self.tool_mode = ToolMode::Pan;
                             }
 
-                            ui.add_space(16.0);
+                            ui.add_space(8.0);
                             ui.separator();
-                            ui.add_space(16.0);
+                            ui.add_space(8.0);
 
                             // Snap Grid controls
-                            ui.checkbox(&mut self.snap_grid, "Snap Grid:");
+                            ui.checkbox(&mut self.snap_grid, egui::RichText::new("Snap Grid:").size(13.0));
                             ui.add(egui::Slider::new(&mut self.grid_size, 1..=64).suffix(" px"));
 
-                            ui.add_space(16.0);
+                            ui.add_space(8.0);
                             ui.separator();
-                            ui.add_space(16.0);
+                            ui.add_space(8.0);
 
                             // Zoom controls
-                            if ui.button(" - ").clicked() { self.zoom = (self.zoom / 1.15_f32).max(0.1_f32); }
-                            ui.label(egui::RichText::new(format!("{:.0}%", self.zoom * 100.0)).monospace());
-                            if ui.button(" + ").clicked() { self.zoom = (self.zoom * 1.15_f32).min(8.0_f32); }
+                            let zoom_out = egui::Button::new(egui::RichText::new(" ➖ ").size(11.0));
+                            if ui.add(zoom_out).clicked() { self.zoom = (self.zoom / 1.15_f32).max(0.1_f32); }
+                            
+                            ui.label(egui::RichText::new(format!("{:.0}%", self.zoom * 100.0)).strong().size(13.0).monospace());
+                            
+                            let zoom_in = egui::Button::new(egui::RichText::new(" ➕ ").size(11.0));
+                            if ui.add(zoom_in).clicked() { self.zoom = (self.zoom * 1.15_f32).min(8.0_f32); }
 
-                            if ui.button("Fit / Reset View").clicked() {
+                            let fit_btn = egui::Button::new(
+                                egui::RichText::new("⛶ Fit / Reset View").size(13.0)
+                            ).fill(egui::Color32::from_rgb(45, 55, 72));
+                            if ui.add(fit_btn).clicked() {
                                 self.pan = egui::vec2(60.0, 60.0);
                                 self.zoom = 0.65;
                             }
 
-                            ui.add_space(16.0);
+                            ui.add_space(8.0);
                             ui.separator();
-                            ui.add_space(16.0);
+                            ui.add_space(8.0);
 
                             // Toggle Display Sprite Names Checkbox
-                            ui.checkbox(&mut self.show_labels, "Show Names");
+                            ui.checkbox(&mut self.show_labels, egui::RichText::new("🏷 Show Names").size(13.0));
                         });
                     });
 
