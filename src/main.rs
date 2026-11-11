@@ -1,6 +1,6 @@
 use eframe::egui;
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -302,6 +302,8 @@ enum ResizeCorner {
 struct ImagesetEditorApp {
     imageset: ImageSet,
     selected_index: Option<usize>,
+    selected_indices: HashSet<usize>, // รองรับการเลือกหลายกล่องพร้อมกัน (Multi-Selection)
+    clipboard_sprites: Vec<ImageDef>, // คลิปบอร์ดสำหรับ Copy / Paste
     status_msg: String,
 
     // Brand icon texture for top navbar
@@ -341,6 +343,8 @@ impl Default for ImagesetEditorApp {
         Self {
             imageset,
             selected_index: None,
+            selected_indices: HashSet::new(),
+            clipboard_sprites: Vec::new(),
             status_msg: "Ready: Click & drag on canvas to draw sprite boxes, or load texture".to_string(),
             brand_icon: None,
             texture_handle: None,
@@ -375,6 +379,7 @@ impl ImagesetEditorApp {
             images: Vec::new(),
         };
         self.selected_index = None;
+        self.selected_indices.clear();
         self.texture_handle = None;
         self.loaded_texture_path = None;
         self.loaded_rgba_image = None;
@@ -470,9 +475,22 @@ impl ImagesetEditorApp {
         }
     }
 
-    // เมธอดลบ (Delete) กล่อง Sprite ที่เลือก
+    // เมธอดลบ (Delete) กล่อง Sprite ที่เลือก (รองรับทั้งกล่องเดี่ยวและ Multi-selection)
     fn delete_selected_box(&mut self) {
-        if let Some(idx) = self.selected_index {
+        if !self.selected_indices.is_empty() {
+            let mut indices: Vec<usize> = self.selected_indices.iter().copied().collect();
+            indices.sort_unstable_by(|a, b| b.cmp(a)); // ลบจากท้ายสุดมาหน้าสุดเพื่อไม่ให้ index เคลื่อน
+
+            for idx in indices {
+                if idx < self.imageset.images.len() {
+                    self.imageset.images.remove(idx);
+                }
+            }
+            self.selected_indices.clear();
+            self.selected_index = if !self.imageset.images.is_empty() { Some(self.imageset.images.len() - 1) } else { None };
+            self.status_msg = "Deleted selected sprites".to_string();
+            self.update_code();
+        } else if let Some(idx) = self.selected_index {
             if idx < self.imageset.images.len() {
                 let name = self.imageset.images[idx].name.clone();
                 self.imageset.images.remove(idx);
@@ -485,6 +503,95 @@ impl ImagesetEditorApp {
                 self.update_code();
             }
         }
+    }
+
+    // เมธอดเลือกกล่องทั้งหมด (Select All - Ctrl+A)
+    fn select_all_sprites(&mut self) {
+        self.selected_indices.clear();
+        for i in 0..self.imageset.images.len() {
+            self.selected_indices.insert(i);
+        }
+        if !self.imageset.images.is_empty() {
+            self.selected_index = Some(0);
+        }
+        self.status_msg = format!("Selected all {} sprites", self.imageset.images.len());
+    }
+
+    // ฟังก์ชัน Alignment Tools (จัดชิดขอบและกึ่งกลาง)
+    fn align_selected(&mut self, align_type: &str) {
+        let indices: Vec<usize> = if !self.selected_indices.is_empty() {
+            self.selected_indices.iter().copied().filter(|&i| i < self.imageset.images.len()).collect()
+        } else if let Some(idx) = self.selected_index {
+            vec![idx]
+        } else {
+            return;
+        };
+
+        if indices.len() < 2 {
+            self.status_msg = "Please select at least 2 sprites to align".to_string();
+            return;
+        }
+
+        match align_type {
+            "left" => {
+                // จัดชิดซ้าย (Leftmost X)
+                let min_x = indices.iter().map(|&i| self.imageset.images[i].pos.0).min().unwrap_or(0);
+                for &i in &indices {
+                    self.imageset.images[i].pos.0 = min_x;
+                }
+                self.status_msg = "Aligned Left".to_string();
+            }
+            "right" => {
+                // จัดชิดขวา (Rightmost X + Width)
+                let max_right = indices.iter().map(|&i| self.imageset.images[i].pos.0 + self.imageset.images[i].size.0 as i32).max().unwrap_or(0);
+                for &i in &indices {
+                    let w = self.imageset.images[i].size.0 as i32;
+                    self.imageset.images[i].pos.0 = max_right - w;
+                }
+                self.status_msg = "Aligned Right".to_string();
+            }
+            "top" => {
+                // จัดชิดบน (Topmost Y)
+                let min_y = indices.iter().map(|&i| self.imageset.images[i].pos.1).min().unwrap_or(0);
+                for &i in &indices {
+                    self.imageset.images[i].pos.1 = min_y;
+                }
+                self.status_msg = "Aligned Top".to_string();
+            }
+            "bottom" => {
+                // จัดชิดล่าง (Bottommost Y + Height)
+                let max_bottom = indices.iter().map(|&i| self.imageset.images[i].pos.1 + self.imageset.images[i].size.1 as i32).max().unwrap_or(0);
+                for &i in &indices {
+                    let h = self.imageset.images[i].size.1 as i32;
+                    self.imageset.images[i].pos.1 = max_bottom - h;
+                }
+                self.status_msg = "Aligned Bottom".to_string();
+            }
+            "center_h" => {
+                // จัดกึ่งกลางแนวนอน (Horizontal Center)
+                let min_x = indices.iter().map(|&i| self.imageset.images[i].pos.0).min().unwrap_or(0);
+                let max_right = indices.iter().map(|&i| self.imageset.images[i].pos.0 + self.imageset.images[i].size.0 as i32).max().unwrap_or(0);
+                let center_x = (min_x + max_right) / 2;
+                for &i in &indices {
+                    let half_w = (self.imageset.images[i].size.0 as i32) / 2;
+                    self.imageset.images[i].pos.0 = center_x - half_w;
+                }
+                self.status_msg = "Aligned Center Horizontally".to_string();
+            }
+            "center_v" => {
+                // จัดกึ่งกลางแนวตั้ง (Vertical Center)
+                let min_y = indices.iter().map(|&i| self.imageset.images[i].pos.1).min().unwrap_or(0);
+                let max_bottom = indices.iter().map(|&i| self.imageset.images[i].pos.1 + self.imageset.images[i].size.1 as i32).max().unwrap_or(0);
+                let center_y = (min_y + max_bottom) / 2;
+                for &i in &indices {
+                    let half_h = (self.imageset.images[i].size.1 as i32) / 2;
+                    self.imageset.images[i].pos.1 = center_y - half_h;
+                }
+                self.status_msg = "Aligned Center Vertically".to_string();
+            }
+            _ => {}
+        }
+        self.update_code();
     }
 
     // ฟังก์ชันค้นหาไฟล์ .meta ของ .edds เพื่อดึง GUID และ Resource Name
@@ -689,7 +796,10 @@ impl eframe::App for ImagesetEditorApp {
         );
         ctx.set_style(style);
 
-        // จัดการคีย์ลัดสำหรับ Duplicate (Ctrl+D) และ Delete (Delete / Backspace เมื่อไม่ได้พิมพ์ข้อความ)
+        // จัดการคีย์ลัด: Select All (Ctrl+A), Duplicate (Ctrl+D), Delete (Delete / Backspace)
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(egui::Key::A) && !ctx.wants_keyboard_input() {
+            self.select_all_sprites();
+        }
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(egui::Key::D) {
             self.duplicate_selected_box();
         }
@@ -1030,7 +1140,7 @@ impl eframe::App for ImagesetEditorApp {
 
                     let mut to_delete = None;
                     for (idx, img) in self.imageset.images.iter().enumerate() {
-                        let is_sel = self.selected_index == Some(idx);
+                        let is_sel = self.selected_index == Some(idx) || self.selected_indices.contains(&idx);
                         let bg_color = if is_sel {
                             egui::Color32::from_rgb(42, 54, 70)
                         } else {
@@ -1068,8 +1178,20 @@ impl eframe::App for ImagesetEditorApp {
                         if del_clicked {
                             to_delete = Some(idx);
                         } else if ui.interact(frame_resp.response.rect, egui::Id::new(("sprite_card", idx)), egui::Sense::click()).clicked() {
-                            // คลิกที่ส่วนใดก็ได้ของการ์ดกล่องเพื่อ Active (Select) เมื่อไม่ได้กดลบ
-                            self.selected_index = Some(idx);
+                            // คลิกการ์ด: รองรับ Ctrl/Shift สำหรับ Multi-selection
+                            let modifiers = ctx.input().modifiers;
+                            if modifiers.ctrl || modifiers.shift {
+                                if self.selected_indices.contains(&idx) {
+                                    self.selected_indices.remove(&idx);
+                                } else {
+                                    self.selected_indices.insert(idx);
+                                }
+                                self.selected_index = Some(idx);
+                            } else {
+                                self.selected_indices.clear();
+                                self.selected_indices.insert(idx);
+                                self.selected_index = Some(idx);
+                            }
                         }
 
                         ui.add_space(6.0);
@@ -1391,6 +1513,35 @@ impl eframe::App for ImagesetEditorApp {
 
                             // Toggle Display Sprite Names Checkbox
                             ui.checkbox(&mut self.show_labels, egui::RichText::new("🏷 Show Names").size(13.0));
+
+                            ui.add_space(8.0);
+                            ui.separator();
+                            ui.add_space(8.0);
+
+                            // Alignment Tools Group (ตามภาพต้นแบบ)
+                            let has_multi = self.selected_indices.len() >= 2 || (self.selected_indices.len() >= 1 && self.selected_index.is_some());
+                            ui.add_enabled_ui(has_multi, |ui| {
+                                ui.spacing_mut().button_padding = egui::vec2(6.0, 5.0);
+
+                                if ui.button(egui::RichText::new("⇤").size(14.0).strong()).on_hover_text("Align Left (จัดชิดซ้าย)").clicked() {
+                                    self.align_selected("left");
+                                }
+                                if ui.button(egui::RichText::new("⇥").size(14.0).strong()).on_hover_text("Align Right (จัดชิดขวา)").clicked() {
+                                    self.align_selected("right");
+                                }
+                                if ui.button(egui::RichText::new("⤒").size(14.0).strong()).on_hover_text("Align Top (จัดชิดบน)").clicked() {
+                                    self.align_selected("top");
+                                }
+                                if ui.button(egui::RichText::new("⤓").size(14.0).strong()).on_hover_text("Align Bottom (จัดชิดล่าง)").clicked() {
+                                    self.align_selected("bottom");
+                                }
+                                if ui.button(egui::RichText::new("⤹").size(14.0).strong()).on_hover_text("Align Center H (กึ่งกลางแนวนอน)").clicked() {
+                                    self.align_selected("center_h");
+                                }
+                                if ui.button(egui::RichText::new("⤸").size(14.0).strong()).on_hover_text("Align Center V (กึ่งกลางแนวตั้ง)").clicked() {
+                                    self.align_selected("center_v");
+                                }
+                            });
                         });
                     });
 
@@ -1549,7 +1700,22 @@ impl eframe::App for ImagesetEditorApp {
                                 let bh = sp.size.1 as f32;
 
                                 if wx >= bx && wx <= bx + bw && wy >= by && wy <= by + bh {
-                                    self.selected_index = Some(idx);
+                                    let modifiers = ctx.input().modifiers;
+                                    if modifiers.ctrl || modifiers.shift {
+                                        if self.selected_indices.contains(&idx) {
+                                            self.selected_indices.remove(&idx);
+                                        } else {
+                                            self.selected_indices.insert(idx);
+                                        }
+                                        self.selected_index = Some(idx);
+                                    } else {
+                                        if !self.selected_indices.contains(&idx) {
+                                            self.selected_indices.clear();
+                                            self.selected_indices.insert(idx);
+                                        }
+                                        self.selected_index = Some(idx);
+                                    }
+
                                     self.drag_moving_index = Some(idx);
                                     self.drag_moving_offset = egui::vec2(wx - bx, wy - by);
                                     clicked_something = true;
@@ -1565,6 +1731,7 @@ impl eframe::App for ImagesetEditorApp {
                             self.is_drawing = true;
                             self.draw_start = Some(egui::pos2(sn_x, sn_y));
                             self.selected_index = None;
+                            self.selected_indices.clear();
                         }
                     }
                 }
@@ -1708,20 +1875,25 @@ impl eframe::App for ImagesetEditorApp {
 
                 // 5. Draw Existing Sprite Boxes & Corner Handles
                 for (idx, sp) in self.imageset.images.iter().enumerate() {
-                    let is_sel = self.selected_index == Some(idx);
+                    let is_primary_sel = self.selected_index == Some(idx);
+                    let is_sel = is_primary_sel || self.selected_indices.contains(&idx);
                     let sp_min = to_screen(sp.pos.0 as f32, sp.pos.1 as f32);
                     let sp_max = to_screen((sp.pos.0 + sp.size.0 as i32) as f32, (sp.pos.1 + sp.size.1 as i32) as f32);
                     let rect = egui::Rect::from_min_max(sp_min, sp_max);
 
                     // Box Fill & Stroke
-                    let fill_color = if is_sel {
-                        egui::Color32::from_rgba_unmultiplied(245, 158, 11, 45)
+                    let fill_color = if is_primary_sel {
+                        egui::Color32::from_rgba_unmultiplied(245, 158, 11, 55)
+                    } else if is_sel {
+                        egui::Color32::from_rgba_unmultiplied(59, 130, 246, 50)
                     } else {
-                        egui::Color32::from_rgba_unmultiplied(59, 130, 246, 25)
+                        egui::Color32::from_rgba_unmultiplied(59, 130, 246, 20)
                     };
 
-                    let stroke_color = if is_sel {
+                    let stroke_color = if is_primary_sel {
                         egui::Color32::from_rgb(245, 158, 11)
+                    } else if is_sel {
+                        egui::Color32::from_rgb(96, 165, 250)
                     } else {
                         egui::Color32::from_rgb(59, 130, 246)
                     };
@@ -1742,8 +1914,8 @@ impl eframe::App for ImagesetEditorApp {
                         );
                     }
 
-                    // Draw 4 Corner Handles for Selected Box
-                    if is_sel {
+                    // Draw 4 Corner Handles for Primary Selected Box
+                    if is_primary_sel {
                         let handle_fill = egui::Color32::WHITE;
                         let handle_stroke = egui::Stroke::new(1.5_f32, egui::Color32::from_rgb(245, 158, 11));
 
@@ -1755,10 +1927,7 @@ impl eframe::App for ImagesetEditorApp {
                         ];
 
                         for pt in corner_points {
-                            let h_rect = egui::Rect::from_min_max(
-                                pt - egui::vec2(half_h, half_h),
-                                pt + egui::vec2(half_h, half_h),
-                            );
+                            let h_rect = egui::Rect::from_center_size(pt, egui::vec2(handle_size, handle_size));
                             painter.rect_filled(h_rect, 1.0, handle_fill);
                             painter.rect_stroke(h_rect, 1.0, handle_stroke);
                         }
