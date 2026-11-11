@@ -406,7 +406,74 @@ impl ImagesetEditorApp {
         }
     }
 
-    // ฟังก์ชันค้นหาและแปลง .edds ไปเป็น .png โดยใช้ edds2png.exe
+    // ดึงพาธเครื่องมือ edds2png (มี Embedded Binary ในตัว)
+    fn get_edds2png_tool() -> Option<PathBuf> {
+        let temp_dir = env::temp_dir().join("dayz_imageset_editor_tools");
+        let _ = fs::create_dir_all(&temp_dir);
+        let embedded_path = temp_dir.join("edds2png.exe");
+
+        // ตรวจสอบและคลาย binary ออกมาใน Temp หากยังไม่มีหรือขนาดไม่ตรง
+        let embedded_bytes = include_bytes!("../edds2png.exe");
+        let need_write = if embedded_path.exists() {
+            fs::metadata(&embedded_path).map(|m| m.len() != embedded_bytes.len() as u64).unwrap_or(true)
+        } else {
+            true
+        };
+
+        if need_write {
+            let _ = fs::write(&embedded_path, embedded_bytes);
+        }
+
+        if embedded_path.exists() {
+            return Some(embedded_path);
+        }
+
+        // Fallback พาธทั่วไป
+        let candidates = [
+            PathBuf::from("edds2png.exe"),
+            PathBuf::from("tools/edds2png.exe"),
+            PathBuf::from("P:/workbrench dayz tools/edds2png.exe"),
+        ];
+        for c in &candidates {
+            if c.exists() { return Some(c.clone()); }
+        }
+        None
+    }
+
+    // ดึงพาธเครื่องมือ imagesetconv (มี Embedded Binary ในตัว)
+    fn get_imagesetconv_tool() -> Option<PathBuf> {
+        let temp_dir = env::temp_dir().join("dayz_imageset_editor_tools");
+        let _ = fs::create_dir_all(&temp_dir);
+        let embedded_path = temp_dir.join("imagesetconv.exe");
+
+        let embedded_bytes = include_bytes!("../imagesetconv.exe");
+        let need_write = if embedded_path.exists() {
+            fs::metadata(&embedded_path).map(|m| m.len() != embedded_bytes.len() as u64).unwrap_or(true)
+        } else {
+            true
+        };
+
+        if need_write {
+            let _ = fs::write(&embedded_path, embedded_bytes);
+        }
+
+        if embedded_path.exists() {
+            return Some(embedded_path);
+        }
+
+        // Fallback พาธทั่วไป
+        let candidates = [
+            PathBuf::from("imagesetconv.exe"),
+            PathBuf::from("tools/imagesetconv.exe"),
+            PathBuf::from("P:/workbrench dayz tools/imagesetconv.exe"),
+        ];
+        for c in &candidates {
+            if c.exists() { return Some(c.clone()); }
+        }
+        None
+    }
+
+    // ฟังก์ชันค้นหาและแปลง .edds ไปเป็น .png โดยใช้ edds2png
     fn convert_edds_to_png(&self, edds_path: &Path) -> Option<PathBuf> {
         let png_path = edds_path.with_extension("png");
         
@@ -421,24 +488,7 @@ impl ImagesetEditorApp {
             }
         }
 
-        // ค้นหาพาธของ edds2png.exe ในโฟลเดอร์โปรแกรมหรือโฟลเดอร์เครื่องมือ
-        let exe_candidates = [
-            PathBuf::from("edds2png.exe"),
-            PathBuf::from("tools/edds2png.exe"),
-            PathBuf::from("../tools/edds2png.exe"),
-            PathBuf::from("P:/workbrench dayz tools/tools/edds2png.exe"),
-            PathBuf::from("P:/workbrench dayz tools/edds2png.exe"),
-        ];
-
-        let mut tool_exe = None;
-        for c in &exe_candidates {
-            if c.exists() {
-                tool_exe = Some(c.clone());
-                break;
-            }
-        }
-
-        if let Some(tool) = tool_exe {
+        if let Some(tool) = Self::get_edds2png_tool() {
             let _ = Command::new(&tool)
                 .arg(edds_path)
                 .output();
@@ -659,25 +709,9 @@ impl ImagesetEditorApp {
             return Err("Please load a texture image before exporting EDDS".to_string());
         };
 
-        // 2. ค้นหา imagesetconv.exe
-        let conv_candidates = [
-            PathBuf::from("imagesetconv.exe"),
-            PathBuf::from("tools/imagesetconv.exe"),
-            PathBuf::from("../imagesetconv.exe"),
-            PathBuf::from("P:/workbrench dayz tools/tools/imagesetconv.exe"),
-            PathBuf::from("P:/workbrench dayz tools/imagesetconv.exe"),
-            PathBuf::from("P:/workbrench dayz tools/DayZ-ImageSet-Editor/imagesetconv.exe"),
-        ];
-
-        let mut conv_exe = None;
-        for c in &conv_candidates {
-            if c.exists() {
-                conv_exe = Some(c.clone());
-                break;
-            }
-        }
-
-        let conv_tool = conv_exe.ok_or_else(|| "imagesetconv.exe not found! Please place it in the application folder.".to_string())?;
+        // 2. ดึง imagesetconv tool
+        let conv_tool = Self::get_imagesetconv_tool()
+            .ok_or_else(|| "imagesetconv tool could not be loaded!".to_string())?;
 
         // 3. เรียกคำสั่ง png2edds
         let output = Command::new(&conv_tool)
