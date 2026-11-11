@@ -567,6 +567,18 @@ impl ImagesetEditorApp {
 
 impl eframe::App for ImagesetEditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // กำหนดขนาดตัวอักษรเริ่มต้นของ UI ให้ใหญ่และอ่านง่ายขึ้น
+        let mut style = (*ctx.style()).clone();
+        style.text_styles.insert(
+            egui::TextStyle::Body,
+            egui::FontId::new(14.0, egui::FontFamily::Proportional),
+        );
+        style.text_styles.insert(
+            egui::TextStyle::Button,
+            egui::FontId::new(13.5, egui::FontFamily::Proportional),
+        );
+        ctx.set_style(style);
+
         // จัดการคีย์ลัดสำหรับ Duplicate (Ctrl+D) และ Delete (Delete / Backspace เมื่อไม่ได้พิมพ์ข้อความ)
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(egui::Key::D) {
             self.duplicate_selected_box();
@@ -597,29 +609,21 @@ impl eframe::App for ImagesetEditorApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(
-                        egui::RichText::new("DAYZ IMAGESETS EDITOR")
-                            .strong()
-                            .size(15.0)
-                            .color(egui::Color32::from_rgb(240, 246, 252)),
-                    );
-
-                    ui.add_space(18.0);
+                    ui.spacing_mut().item_spacing = egui::vec2(10.0, 0.0);
+                    ui.spacing_mut().button_padding = egui::vec2(12.0, 7.0);
 
                     // --- New Project Button ---
                     let new_btn = egui::Button::new(
-                        egui::RichText::new("New Project").strong().color(egui::Color32::WHITE)
+                        egui::RichText::new("📄 New Project").size(13.5).strong().color(egui::Color32::WHITE)
                     ).fill(egui::Color32::from_rgb(55, 65, 81));
 
                     if ui.add(new_btn).on_hover_text("Reset all sprites and create a brand new imageset project").clicked() {
                         self.new_project();
                     }
 
-                    ui.add_space(4.0);
-
                     // Primary Action: Load Texture (EDDS / PNG / TGA / JPG / WEBP)
                     let load_btn = egui::Button::new(
-                        egui::RichText::new("Load Texture (EDDS/PNG)").strong().color(egui::Color32::BLACK)
+                        egui::RichText::new("🖼 Load Texture (EDDS/PNG)").size(13.5).strong().color(egui::Color32::BLACK)
                     ).fill(egui::Color32::from_rgb(217, 119, 6));
 
                     if ui.add(load_btn).clicked() {
@@ -631,9 +635,11 @@ impl eframe::App for ImagesetEditorApp {
                         }
                     }
 
-                    ui.add_space(4.0);
+                    let import_btn = egui::Button::new(
+                        egui::RichText::new("📂 Import .imageset").size(13.5).color(egui::Color32::WHITE)
+                    ).fill(egui::Color32::from_rgb(37, 99, 235));
 
-                    if ui.button("Import .imageset").clicked() {
+                    if ui.add(import_btn).clicked() {
                         if let Some(path) = rfd::FileDialog::new()
                             .add_filter("ImageSet (*.imageset, *.txt)", &["imageset", "txt"])
                             .pick_file()
@@ -698,11 +704,9 @@ impl eframe::App for ImagesetEditorApp {
                         }
                     }
 
-                    ui.add_space(4.0);
-
                     // Primary Action: Save .imageset
                     let save_btn = egui::Button::new(
-                        egui::RichText::new("Save .imageset").strong().color(egui::Color32::WHITE)
+                        egui::RichText::new("💾 Save .imageset").size(13.5).strong().color(egui::Color32::WHITE)
                     ).fill(egui::Color32::from_rgb(16, 185, 129));
 
                     if ui.add(save_btn).clicked() {
@@ -720,10 +724,18 @@ impl eframe::App for ImagesetEditorApp {
                         }
                     }
 
+                    // ด้านขวาสุดแสดง Version ของ Application และสถานะ
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
+                            egui::RichText::new("v0.1.0")
+                                .strong()
+                                .size(12.5)
+                                .color(egui::Color32::from_rgb(245, 158, 11))
+                        );
+                        ui.separator();
+                        ui.label(
                             egui::RichText::new(&self.status_msg)
-                                .size(11.0)
+                                .size(12.0)
                                 .color(egui::Color32::from_rgb(139, 148, 158))
                         );
                     });
@@ -1633,7 +1645,7 @@ fn main() {
     };
 
     let _ = eframe::run_native(
-        "DayZ .imageset Visual Editor",
+        "ImageSet Editor",
         native_options,
         Box::new(|_cc| Box::new(ImagesetEditorApp::default())),
     );
