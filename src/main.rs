@@ -1547,35 +1547,6 @@ impl eframe::App for ImagesetEditorApp {
 
                             // Toggle Display Sprite Names Checkbox
                             ui.checkbox(&mut self.show_labels, egui::RichText::new("🏷 Show Names").size(13.0));
-
-                            ui.add_space(8.0);
-                            ui.separator();
-                            ui.add_space(8.0);
-
-                            // Alignment Tools Group (ตามภาพต้นแบบ)
-                            let has_multi = self.selected_indices.len() >= 2 || (self.selected_indices.len() >= 1 && self.selected_index.is_some());
-                            ui.add_enabled_ui(has_multi, |ui| {
-                                ui.spacing_mut().button_padding = egui::vec2(6.0, 5.0);
-
-                                if ui.button(egui::RichText::new("⇤").size(14.0).strong()).on_hover_text("Align Left (จัดชิดซ้าย)").clicked() {
-                                    self.align_selected("left");
-                                }
-                                if ui.button(egui::RichText::new("⇥").size(14.0).strong()).on_hover_text("Align Right (จัดชิดขวา)").clicked() {
-                                    self.align_selected("right");
-                                }
-                                if ui.button(egui::RichText::new("⤒").size(14.0).strong()).on_hover_text("Align Top (จัดชิดบน)").clicked() {
-                                    self.align_selected("top");
-                                }
-                                if ui.button(egui::RichText::new("⤓").size(14.0).strong()).on_hover_text("Align Bottom (จัดชิดล่าง)").clicked() {
-                                    self.align_selected("bottom");
-                                }
-                                if ui.button(egui::RichText::new("⤹").size(14.0).strong()).on_hover_text("Align Center H (กึ่งกลางแนวนอน)").clicked() {
-                                    self.align_selected("center_h");
-                                }
-                                if ui.button(egui::RichText::new("⤸").size(14.0).strong()).on_hover_text("Align Center V (กึ่งกลางแนวตั้ง)").clicked() {
-                                    self.align_selected("center_v");
-                                }
-                            });
                         });
                     });
 
@@ -2045,9 +2016,9 @@ fn main() {
     }
 
     let native_options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(1600.0, 960.0)),
+        initial_window_size: Some(egui::vec2(1656.0, 1067.0)),
         min_window_size: Some(egui::vec2(1200.0, 720.0)),
-        maximized: true,
+        maximized: false,
         icon_data,
         ..Default::default()
     };
