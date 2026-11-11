@@ -1299,7 +1299,7 @@ impl eframe::App for ImagesetEditorApp {
                         egui::RichText::new("📦 Export EDDS + .meta").size(13.5).strong().color(egui::Color32::WHITE)
                     ).fill(egui::Color32::from_rgb(147, 51, 234));
 
-                    if ui.add(export_edds_btn).on_hover_text("ส่งออกภาพเป็น .edds และสร้างไฟล์ .edds.meta พร้อมลงทะเบียน GUID อัตโนมัติ").clicked() {
+                    if ui.add(export_edds_btn).on_hover_text("Export image as .edds and automatically generate .edds.meta with GUID registration.").clicked() {
                         let default_edds_name = format!("{}.edds", self.imageset.name);
                         if let Some(path) = rfd::FileDialog::new()
                             .set_file_name(&default_edds_name)
@@ -1320,7 +1320,7 @@ impl eframe::App for ImagesetEditorApp {
                     let undo_btn = egui::Button::new(
                         egui::RichText::new("↩ Undo").size(13.0)
                     ).fill(if can_undo { egui::Color32::from_rgb(45, 55, 72) } else { egui::Color32::from_rgb(28, 34, 44) });
-                    if ui.add_enabled(can_undo, undo_btn).on_hover_text("ย้อนกลับการแก้ไขล่าสุด (Ctrl+Z)").clicked() {
+                    if ui.add_enabled(can_undo, undo_btn).on_hover_text("Undo last edit (Ctrl+Z)").clicked() {
                         self.undo();
                     }
 
@@ -1328,7 +1328,7 @@ impl eframe::App for ImagesetEditorApp {
                     let redo_btn = egui::Button::new(
                         egui::RichText::new("↪ Redo").size(13.0)
                     ).fill(if can_redo { egui::Color32::from_rgb(45, 55, 72) } else { egui::Color32::from_rgb(28, 34, 44) });
-                    if ui.add_enabled(can_redo, redo_btn).on_hover_text("ทำซ้ำการแก้ไข (Ctrl+Y)").clicked() {
+                    if ui.add_enabled(can_redo, redo_btn).on_hover_text("Redo last edit (Ctrl+Y)").clicked() {
                         self.redo();
                     }
 
@@ -1466,7 +1466,7 @@ impl eframe::App for ImagesetEditorApp {
                             egui::RichText::new("+ Add Box").size(12.0).strong()
                         ).fill(egui::Color32::from_rgb(45, 55, 72));
 
-                        if ui.add(add_btn).on_hover_text("เพิ่มกล่อง Sprite ใหม่ที่มุมบนซ้าย").clicked() {
+                        if ui.add(add_btn).on_hover_text("Add new Sprite box at top-left corner").clicked() {
                             self.save_undo_state();
                             let next_num = self.imageset.images.len() + 1;
                             self.imageset.images.push(ImageDef {
@@ -1490,7 +1490,7 @@ impl eframe::App for ImagesetEditorApp {
                             egui::RichText::new("🔍 Auto-Detect").size(12.0).strong()
                         ).fill(if has_tex { egui::Color32::from_rgb(13, 148, 136) } else { egui::Color32::from_rgb(30, 41, 59) });
 
-                        if ui.add_enabled(has_tex, detect_btn).on_hover_text("สแกนหาไอคอนทั้งหมดบนแผ่นภาพอัตโนมัติ (Alpha Island Detection)").clicked() {
+                        if ui.add_enabled(has_tex, detect_btn).on_hover_text("Scan for all icons on the image automatically (Alpha Island Detection)").clicked() {
                             self.auto_detect_all_icons();
                             changed = true;
                         }
@@ -1577,7 +1577,7 @@ impl eframe::App for ImagesetEditorApp {
                                     let focus_btn = egui::Button::new(
                                         egui::RichText::new("🎯").size(12.5)
                                     );
-                                    if ui.add(focus_btn).on_hover_text("เลื่อนมุมมอง Canvas ไปหากรอบนี้ (Focus)").clicked() {
+                                    if ui.add(focus_btn).on_hover_text("Focus Canvas on this box").clicked() {
                                         jump_clicked = true;
                                     }
                                 });
@@ -1671,7 +1671,7 @@ impl eframe::App for ImagesetEditorApp {
                                 let enforce_btn = egui::Button::new(
                                     egui::RichText::new("📋 Copy set:...").size(11.5).strong().color(egui::Color32::from_rgb(167, 243, 208))
                                 ).fill(egui::Color32::from_rgb(6, 78, 59));
-                                if ui.add(enforce_btn).on_hover_text("คัดลอกพาธ Enforce Script: set:<imageset> image:<sprite>").clicked() {
+                                if ui.add(enforce_btn).on_hover_text("Copy Enforce Script: set:<imageset> image:<sprite>").clicked() {
                                     action_copy_enforce = Some(format!("set:{} image:{}", set_name, sp.name));
                                 }
                             });
@@ -1798,7 +1798,7 @@ impl eframe::App for ImagesetEditorApp {
                             egui::RichText::new("🪄 Auto-Trim to Icon Pixels").size(12.5).strong().color(egui::Color32::WHITE)
                         ).fill(egui::Color32::from_rgb(13, 148, 136));
                         if ui.add_sized([ui.available_width(), 30.0], trim_btn)
-                            .on_hover_text("สแกนหาพิกเซลที่ไม่โปร่งใส (Alpha > 10) เพื่อหดกรอบให้พอดีกับตัวไอคอนอัตโนมัติ")
+                            .on_hover_text("Automatically crop the icon bounds by scanning non-transparent pixels (Alpha > 10).")
                             .clicked()
                         {
                             action_auto_trim = true;
@@ -1813,7 +1813,7 @@ impl eframe::App for ImagesetEditorApp {
                                 egui::RichText::new("📋 Duplicate (Ctrl+D)").size(12.5).strong()
                             ).fill(egui::Color32::from_rgb(37, 99, 235));
 
-                            if ui.add(dup_btn).on_hover_text("ทำสำเนากล่องนี้พร้อมขนาดและค่าต่างๆ ไปยังตำแหน่งถัดไป").clicked() {
+                            if ui.add(dup_btn).on_hover_text("Duplicate this box with its size and properties to the next position").clicked() {
                                 action_duplicate = true;
                             }
 
@@ -1822,7 +1822,7 @@ impl eframe::App for ImagesetEditorApp {
                                 egui::RichText::new("🗑 Delete Box (Del)").size(12.5).strong()
                             ).fill(egui::Color32::from_rgb(220, 38, 38));
 
-                            if ui.add(del_btn).on_hover_text("ลบกล่อง Sprite นี้ (กดปุ่ม Delete หรือ Backspace)").clicked() {
+                            if ui.add(del_btn).on_hover_text("Delete this Sprite box (Press Delete or Backspace)").clicked() {
                                 action_delete = true;
                             }
                         });
@@ -1983,7 +1983,7 @@ impl eframe::App for ImagesetEditorApp {
                             let trim_tb = egui::Button::new(
                                 egui::RichText::new("🪄 Auto-Trim").size(12.5).strong()
                             ).fill(if has_sel { egui::Color32::from_rgb(13, 148, 136) } else { egui::Color32::from_rgb(28, 34, 44) });
-                            if ui.add_enabled(has_sel, trim_tb).on_hover_text("หดกรอบให้พอดีขอบไอคอนอัตโนมัติ (Alpha Trim)").clicked() {
+                            if ui.add_enabled(has_sel, trim_tb).on_hover_text("Automatically trim icon bounds (Alpha Trim).").clicked() {
                                 self.auto_trim_selected_box();
                             }
                         });
@@ -2503,7 +2503,7 @@ fn main() {
     }
 
     let native_options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(1656.0, 1067.0)),
+        initial_window_size: Some(egui::vec2(1920.0, 1080.0)),
         min_window_size: Some(egui::vec2(1200.0, 720.0)),
         maximized: false,
         icon_data,
