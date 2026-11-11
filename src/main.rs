@@ -309,6 +309,8 @@ struct ImagesetEditorApp {
     
     // Texture preview
     texture_handle: Option<egui::TextureHandle>,
+    loaded_texture_path: Option<PathBuf>,
+    loaded_rgba_image: Option<image::RgbaImage>,
     
     // Canvas pan & zoom
     pan: egui::Vec2,
@@ -342,6 +344,8 @@ impl Default for ImagesetEditorApp {
             status_msg: "Ready: Click & drag on canvas to draw sprite boxes, or load texture".to_string(),
             brand_icon: None,
             texture_handle: None,
+            loaded_texture_path: None,
+            loaded_rgba_image: None,
             pan: egui::vec2(60.0, 60.0),
             zoom: 0.65,
             tool_mode: ToolMode::DrawEdit,
@@ -372,6 +376,8 @@ impl ImagesetEditorApp {
         };
         self.selected_index = None;
         self.texture_handle = None;
+        self.loaded_texture_path = None;
+        self.loaded_rgba_image = None;
         self.is_drawing = false;
         self.draw_start = None;
         self.drag_moving_index = None;
@@ -500,6 +506,108 @@ impl ImagesetEditorApp {
         None
     }
 
+    // ฟังก์ชันสร้างหรือดึง GUID สำหรับโปรเจกต์
+    fn get_or_generate_guid(&mut self) -> String {
+        let re_guid = Regex::new(r#"^\{([A-Fa-f0-9]{16})\}"#).unwrap();
+        if let Some(caps) = re_guid.captures(&self.imageset.texture_path_1x) {
+            return caps.get(1).map_or("", |m| m.as_str()).to_string();
+        }
+
+        // สุ่ม 64-bit Hex GUID 16 หลัก
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let new_guid = format!("{:016X}", (seed ^ 0x534691EE0479871C) as u64);
+        
+        // ผูก GUID ใหม่เข้ากับ path ทันที
+        let clean_path = self.imageset.texture_path_1x.trim_start_matches('{');
+        let clean_path = if let Some(idx) = clean_path.find('}') {
+            &clean_path[idx + 1..]
+        } else {
+            clean_path
+        };
+        self.imageset.texture_path_1x = format!("{{{}}}{}", new_guid, clean_path);
+        self.update_code();
+        new_guid
+    }
+
+    // ส่งออกและแปลงภาพเป็น .edds พร้อมสร้างไฟล์ .meta อัตโนมัติ
+    fn export_edds_and_meta(&mut self, output_edds_path: &Path) -> Result<String, String> {
+        let guid = self.get_or_generate_guid();
+        let edds_filename = output_edds_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let stem = output_edds_path.file_stem().unwrap_or_default().to_string_lossy().to_string();
+        let parent_dir = output_edds_path.parent().unwrap_or_else(|| Path::new("."));
+
+        // 1. เตรียมภาพ PNG ชั่วคราวที่จะนำไปแปลงเป็น EDDS
+        let temp_png_path = parent_dir.join(format!("__temp_export_{}.png", stem));
+        let png_to_convert = if let Some(ref img) = self.loaded_rgba_image {
+            img.save(&temp_png_path).map_err(|e| format!("Failed to save temp PNG: {}", e))?;
+            temp_png_path.clone()
+        } else if let Some(ref path) = self.loaded_texture_path {
+            if path.extension().unwrap_or_default().to_string_lossy().to_lowercase() == "png" {
+                path.clone()
+            } else {
+                return Err("No active image buffer found to convert to EDDS".to_string());
+            }
+        } else {
+            return Err("Please load a texture image before exporting EDDS".to_string());
+        };
+
+        // 2. ค้นหา imagesetconv.exe
+        let conv_candidates = [
+            PathBuf::from("imagesetconv.exe"),
+            PathBuf::from("tools/imagesetconv.exe"),
+            PathBuf::from("../imagesetconv.exe"),
+            PathBuf::from("P:/workbrench dayz tools/tools/imagesetconv.exe"),
+            PathBuf::from("P:/workbrench dayz tools/imagesetconv.exe"),
+            PathBuf::from("P:/workbrench dayz tools/DayZ-ImageSet-Editor/imagesetconv.exe"),
+        ];
+
+        let mut conv_exe = None;
+        for c in &conv_candidates {
+            if c.exists() {
+                conv_exe = Some(c.clone());
+                break;
+            }
+        }
+
+        let conv_tool = conv_exe.ok_or_else(|| "imagesetconv.exe not found! Please place it in the application folder.".to_string())?;
+
+        // 3. เรียกคำสั่ง png2edds
+        let output = Command::new(&conv_tool)
+            .args(&["png2edds", "-png", &png_to_convert.to_string_lossy(), "-output", &output_edds_path.to_string_lossy()])
+            .output()
+            .map_err(|e| format!("Failed to execute imagesetconv: {}", e))?;
+
+        if temp_png_path.exists() {
+            let _ = fs::remove_file(&temp_png_path);
+        }
+
+        if !output.status.success() || !output_edds_path.exists() {
+            let err_msg = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("png2edds conversion failed: {}", err_msg));
+        }
+
+        // 4. สร้างเนื้อหาไฟล์ .edds.meta
+        let clean_path = self.imageset.texture_path_1x.replace(&format!("{{{}}}", guid), "");
+        let virtual_res_path = if clean_path.trim().is_empty() {
+            format!("Gui/imagesets/{}", edds_filename)
+        } else {
+            clean_path
+        };
+
+        let meta_content = format!(
+            "MetaFileClass {{\n Name \"{{{guid}}}{virtual_res_path}\"\n Configurations {{\n  PNGResourceClass PC {{\n   SourceFile \"{stem}.png\"\n  }}\n  TGAResourceClass XBOX_ONE : PC {{\n  }}\n  TGAResourceClass PS4 : PC {{\n  }}\n  TGAResourceClass LINUX : PC {{\n  }}\n }}\n}}\n",
+            guid = guid,
+            virtual_res_path = virtual_res_path,
+            stem = stem
+        );
+
+        let meta_path = PathBuf::from(format!("{}.meta", output_edds_path.display()));
+        fs::write(&meta_path, meta_content).map_err(|e| format!("Failed to write .meta file: {}", e))?;
+
+        Ok(format!("Successfully exported: {} and {}.meta (GUID: {})", edds_filename, edds_filename, guid))
+    }
+
     fn load_texture_from_file(&mut self, ctx: &egui::Context, path: &Path) {
         let ext = path.extension().unwrap_or_default().to_string_lossy().to_lowercase();
         
@@ -526,6 +634,8 @@ impl ImagesetEditorApp {
                     color_image,
                     egui::TextureOptions::LINEAR,
                 ));
+                self.loaded_texture_path = Some(path.to_path_buf());
+                self.loaded_rgba_image = Some(rgba.clone());
                 
                 self.imageset.ref_size = (rgba.width(), rgba.height());
                 if let Some(stem) = path.file_stem() {
@@ -720,6 +830,25 @@ impl eframe::App for ImagesetEditorApp {
                                 self.status_msg = format!("Saved file: {}", path.display());
                             } else {
                                 self.status_msg = "Error saving file!".to_string();
+                            }
+                        }
+                    }
+
+                    // Export .edds and .meta in 1-Click
+                    let export_edds_btn = egui::Button::new(
+                        egui::RichText::new("📦 Export EDDS + .meta").size(13.5).strong().color(egui::Color32::WHITE)
+                    ).fill(egui::Color32::from_rgb(147, 51, 234));
+
+                    if ui.add(export_edds_btn).on_hover_text("ส่งออกภาพเป็น .edds และสร้างไฟล์ .edds.meta พร้อมลงทะเบียน GUID อัตโนมัติ").clicked() {
+                        let default_edds_name = format!("{}.edds", self.imageset.name);
+                        if let Some(path) = rfd::FileDialog::new()
+                            .set_file_name(&default_edds_name)
+                            .add_filter("Enfusion Texture (*.edds)", &["edds"])
+                            .save_file()
+                        {
+                            match self.export_edds_and_meta(&path) {
+                                Ok(msg) => self.status_msg = msg,
+                                Err(err) => self.status_msg = format!("Export Error: {}", err),
                             }
                         }
                     }
