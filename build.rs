@@ -1,5 +1,3 @@
-use std::io::Write;
-
 fn main() {
     if std::env::var("TARGET").unwrap_or_default().contains("windows") {
         let mut res = winres::WindowsResource::new();

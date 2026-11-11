@@ -29,21 +29,28 @@ In DayZ modding, defining custom UI icons and sprites via Bohemia Interactive's 
 
 ## ✨ Features (คุณสมบัติเด่น)
 
-- 🎨 **Direct `.edds` Texture Support:** Automatically decompresses and loads DayZ `.edds` textures using integrated `edds2png` support.
+- 🎨 **Direct `.edds` Texture Support & 1-Click Export:**
+  - Automatically decompresses and loads DayZ `.edds` textures using embedded `edds2png` support.
+  - **1-Click `📦 Export EDDS + .meta`:** Converts textures to `.edds` and generates `.edds.meta` with registered `{GUID}` automatically.
+- 🪄 **Smart Auto-Detection & Auto-Trim (New in v0.2.0):**
+  - **`🔍 Auto-Detect`:** Scans the entire texture sheet for non-transparent pixel islands (Connected-Component Alpha Detection) and generates sprite boxes for all icons in 1 click.
+  - **`🪄 Auto-Trim`:** Automatically shrinks/fits selected bounding boxes tightly around non-transparent icon pixels (`Alpha > 10`).
 - 📐 **Visual Bounding Box Manipulation:**
-  - Drag to move sprite boxes freely.
+  - Drag to move single or multiple sprite boxes (`Ctrl+Click` / `Ctrl+A`) simultaneously.
   - Interactive corner handles to resize width and height with real-time feedback.
+  - **Arrow Keys Nudge:** Move selected boxes by `1px` (`Arrow Keys`) or by grid size (`Shift + Arrow Keys`).
   - Configurable **Snap to Grid** (default 8px) with toggleable grid sizes.
+  - **Undo / Redo (`Ctrl + Z` / `Ctrl + Y`):** Up to 50 steps of history tracking.
 - 🔍 **DayZ GUID & Meta Resolution:**
   - Preserves `{GUID}` paths (e.g. `{534691EE0479871C}Gui/imagesets/dayz_gui.edds`).
   - Automatically scans for corresponding `.edds.meta` files to discover and attach the correct GUID if missing.
-- 📋 **Sprite Management:**
-  - **Duplicate Box (`Ctrl + D`):** Quick duplication of bounding boxes, flags, and size.
-  - **Delete Sprite (`Del` / `Backspace` / `✕`):** Safe deletion with keyboard shortcuts.
-  - Card-wide click selection to jump directly to any sprite.
-  - Toggle sprite name labels (`[x] Show Names`) on the visual canvas.
-- 💻 **Live Enfusion Code Generation:** Instant preview of the generated DayZ `ImageSetClass` hierarchy with one-click **Copy Code**.
-- 🚀 **Zero Heavy Dependencies:** Standalone native desktop executable without requiring full Workbench or visual studio installs.
+- 📋 **Sprite Management & Search:**
+  - **Search & Filter (`🔍 Search...`):** Quickly filter sprites by name or group, and click **`🎯`** (or double-click a card) to focus the canvas on that sprite.
+  - **Copy / Paste / Duplicate (`Ctrl + C` / `Ctrl + V` / `Ctrl + D`):** Quick duplication and clipboard support.
+  - **Copy Enforce Path (`📋 Copy set:...`):** One-click copy of `set:<imageset> image:<sprite>` for Enforce Script & `.layout` files.
+  - **Drag & Drop Support:** Drop `.edds`, `.png`, `.tga`, `.jpg`, or `.imageset` files directly into the window.
+- 💻 **Live Enfusion Code Generation:** Instant deterministic preview of the generated DayZ `ImageSetClass` hierarchy with one-click **Copy Code**.
+- 🚀 **Zero External Dependencies:** Single portable native desktop executable (with `edds2png` and `imagesetconv` embedded inside).
 
 ---
 
@@ -69,13 +76,18 @@ In DayZ modding, defining custom UI icons and sprites via Bohemia Interactive's 
 ### 3. Canvas Controls & Hotkeys
 | Action | Shortcut / Control |
 |---|---|
-| **Pan Canvas** | Right Mouse Button Drag (or switch to `Pan Mode`) |
+| **Pan Canvas** | Right / Middle Mouse Drag (or switch to `Pan Mode`) |
 | **Zoom Canvas** | Mouse Scroll Wheel (or `+` / `-` buttons) |
 | **Reset View** | `Fit / Reset View` button |
+| **Focus on Sprite** | Click `🎯` or Double-Click sprite card in left panel |
 | **Draw New Box** | Left Mouse Drag on canvas (in `Draw/Edit Mode`) |
-| **Move Box** | Left Mouse Drag inside an existing box |
+| **Move Box(es)** | Left Mouse Drag inside box (or `Arrow Keys` for 1px / `Shift + Arrows` for Grid) |
 | **Resize Box** | Left Mouse Drag any of the 4 corner handles |
-| **Duplicate Selected** | `Ctrl + D` |
+| **Auto-Trim Box** | Click `🪄 Auto-Trim` to fit tightly around icon pixels |
+| **Auto-Detect All** | Click `🔍 Auto-Detect` to generate boxes for all icons on sheet |
+| **Multi-Select** | `Ctrl + Click` or `Ctrl + A` (Select All) |
+| **Undo / Redo** | `Ctrl + Z` / `Ctrl + Y` (or `Ctrl + Shift + Z`) |
+| **Copy / Paste / Duplicate** | `Ctrl + C` / `Ctrl + V` / `Ctrl + D` |
 | **Delete Selected** | `Delete` or `Backspace` (when not editing text) |
 
 ### 4. Saving
